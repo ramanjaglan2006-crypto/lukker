@@ -17,7 +17,7 @@ export default function App() {
     currentPlayer,
     tokens,
     winner,
-    gameLog, // We are not using this visually anymore in the production UI, but keeping it in the hook return
+    gameLog, 
     movableTokens,
     moveToken,
     resetGame,
@@ -36,7 +36,7 @@ export default function App() {
     currentPokerActor,
     currentBetToMatch,
     submitPokerAction,
-    dealer, // assuming useGameEngine exposes this or we can derive it. Wait, dealer is in the engine? We might need to check if useGameEngine exposes dealer, sb, bb
+    dealer, 
     // Direction
     movementDirection,
     movementTarget,
@@ -69,16 +69,9 @@ export default function App() {
     Phase.POKER_SHOWDOWN,
   ].includes(phase);
 
-  // We need to pass the proper props to PlayerInfoBar
   const renderPlayer = (color) => {
     const isBot = playerMode === 'VS_BOT' && color !== 'red';
-    const isLocal = playerMode === 'VS_BOT' ? color === 'red' : true;
     
-    // We assume dealer, smallBlind, bigBlind might be exposed or we can check pokerPlayers[color] if it has flags. 
-    // If they aren't explicitly in the returned hook props, we'll gracefully ignore or just use what we have.
-    // For now, let's pass what we know.
-    const pState = pokerPlayers ? pokerPlayers[color] : null;
-
     return (
       <PlayerInfoBar
         playerColor={color}
@@ -86,67 +79,59 @@ export default function App() {
         isActive={currentPlayer === color}
         isWinner={winner === color}
         isBot={isBot}
-        isPokerPhase={isPokerPhase}
-        pokerState={pState}
-        isLocalPlayer={isLocal}
-        showdown={phase === Phase.POKER_SHOWDOWN}
-        // if dealer etc are not available, they just default to false in PlayerInfoBar
       />
     );
   };
 
   return (
-    <div className="min-h-screen bg-[#0D1321] text-white p-3 sm:p-6 flex flex-col items-center gap-4 mx-auto w-full">
-      {/* Top Header Navigation */}
-      <Header
-        playerMode={playerMode}
-        setPlayerMode={setPlayerMode}
-        soundMuted={soundMuted}
-        setSoundMuted={setSoundMuted}
-        onReset={resetGame}
-      />
+    <div className="h-screen w-screen overflow-hidden bg-[#0D1321] text-white flex flex-col md:flex-row">
+      
+      {/* LEFT COLUMN: LUDO (approx 60-65% width) */}
+      <div className="flex-[6] h-full flex flex-col items-center justify-center p-2 relative">
+        <div className="absolute top-4 left-4 z-50">
+          <Header
+            playerMode={playerMode}
+            setPlayerMode={setPlayerMode}
+            soundMuted={soundMuted}
+            setSoundMuted={setSoundMuted}
+            onReset={resetGame}
+          />
+        </div>
 
-      {/* Main Game Interface Layout */}
-      <main className="w-full flex flex-col items-center justify-start gap-4 flex-1 max-w-[800px]">
-        
-        {/* TOP: Community Cards */}
-        <CommunityCards 
-          phase={phase} 
-          communityCards={communityCards} 
-          pot={pot} 
-        />
-
-        {/* MIDDLE: 2x2 grid for players + Ludo Board */}
-        <div className="w-full flex flex-col gap-4">
-          
+        {/* Ludo Container with constraints to maintain square aspect ratio */}
+        <div className="flex flex-col gap-4 w-full h-full max-h-[85vh] max-w-[85vh] justify-center">
           {/* Top Players */}
-          <div className="w-full flex justify-between gap-4">
-            <div className="flex-1 flex justify-start">{renderPlayer('red')}</div>
-            <div className="flex-1 flex justify-end">{renderPlayer('green')}</div>
+          <div className="w-full flex justify-between gap-4 px-4">
+            {renderPlayer('red')}
+            {renderPlayer('green')}
           </div>
 
-          {/* CENTRAL LUDO BOARD */}
-          <div className="flex justify-center w-full">
-            <LudoBoard
-              tokens={tokens}
-              currentPlayer={currentPlayer}
-              movableTokens={movableTokens}
-              onTokenClick={moveToken}
-            />
+          {/* CENTRAL LUDO BOARD - Auto-scales but stays square */}
+          <div className="flex justify-center w-full flex-1 min-h-0">
+            <div className="aspect-square h-full w-auto">
+              <LudoBoard
+                tokens={tokens}
+                currentPlayer={currentPlayer}
+                movableTokens={movableTokens}
+                onTokenClick={moveToken}
+              />
+            </div>
           </div>
 
           {/* Bottom Players */}
-          <div className="w-full flex justify-between gap-4">
-            <div className="flex-1 flex justify-start">{renderPlayer('blue')}</div>
-            <div className="flex-1 flex justify-end">{renderPlayer('yellow')}</div>
+          <div className="w-full flex justify-between gap-4 px-4">
+            {renderPlayer('blue')}
+            {renderPlayer('yellow')}
           </div>
-
         </div>
+      </div>
 
-        {/* BOTTOM: ACTION PANEL — Poker + Direction + Component controls */}
-        <div className="w-full max-w-[620px] mt-4">
-          {!isPokerPhase && (
-            <div className="bg-[#131C31] border border-slate-800 rounded-2xl p-4 flex items-center justify-center shadow-xl">
+      {/* RIGHT COLUMN: POKER / ACTION (approx 35-40% width) */}
+      <div className="flex-[4] h-full bg-[#0D1321] border-l border-slate-800 flex flex-col p-4">
+        
+        {!isPokerPhase ? (
+          <div className="w-full h-full flex flex-col items-center justify-center">
+            <div className="bg-[#131C31] border border-slate-800 rounded-2xl p-6 shadow-2xl w-full max-w-[450px]">
               <ActionPanel
                 phase={phase}
                 currentPlayer={currentPlayer}
@@ -172,25 +157,22 @@ export default function App() {
                 onSubmitPlayerChoices={submitPlayerChoices}
               />
             </div>
-          )}
-          
-          {isPokerPhase && (
-            <PokerPanel
-              phase={phase}
-              currentPlayer={currentPlayer}
-              playerMode={playerMode}
-              pokerPlayers={pokerPlayers}
-              activePokerPlayers={activePokerPlayers}
-              communityCards={communityCards}
-              pot={pot}
-              currentPokerActor={currentPokerActor}
-              currentBetToMatch={currentBetToMatch}
-              submitPokerAction={submitPokerAction}
-            />
-          )}
-        </div>
-
-      </main>
+          </div>
+        ) : (
+          <PokerPanel
+            phase={phase}
+            currentPlayer={currentPlayer}
+            playerMode={playerMode}
+            pokerPlayers={pokerPlayers}
+            activePokerPlayers={activePokerPlayers}
+            communityCards={communityCards}
+            pot={pot}
+            currentPokerActor={currentPokerActor}
+            currentBetToMatch={currentBetToMatch}
+            submitPokerAction={submitPokerAction}
+          />
+        )}
+      </div>
 
       {/* Winner Celebration Modal */}
       <WinnerModal winner={winner} onRestart={resetGame} />
