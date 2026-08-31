@@ -28,7 +28,7 @@ export default function TokenPin({
   return (
     <div
       onClick={isMovable || isSelected ? onClick : undefined}
-      className={`relative flex items-center justify-center transition-all duration-200 select-none -translate-y-[40%] ${
+      className={`relative flex items-center justify-center transition-all duration-200 select-none ${
         isMovable ? 'token-movable cursor-pointer' : ''
       } ${isSelected ? 'scale-125 z-40 drop-shadow-[0_0_12px_#FFFFFF]' : ''} ${
         isCaptured ? 'opacity-40 scale-75' : ''

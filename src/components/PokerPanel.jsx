@@ -93,18 +93,20 @@ export default function PokerPanel({
   return (
     <div className="w-full h-full flex flex-col gap-4 overflow-y-auto overflow-x-hidden p-2 custom-scrollbar">
       
-      {/* 1. COMMUNITY CARDS (Top) */}
+      {/* 1. OPPONENT STATUSES (Top) */}
+      <div className="flex flex-col gap-2 mt-2">
+        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest pl-1">Table</span>
+        {opponents.map(pId => renderPlayerStatus(pId, false))}
+      </div>
+
+      <div className="flex-1"></div>
+
+      {/* 2. COMMUNITY CARDS (Middle) */}
       <CommunityCards 
         phase={phase} 
         communityCards={communityCards} 
         pot={pot} 
       />
-
-      {/* 2. OPPONENT STATUSES (Middle) */}
-      <div className="flex flex-col gap-2 mt-2">
-        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest pl-1">Table</span>
-        {opponents.map(pId => renderPlayerStatus(pId, false))}
-      </div>
 
       <div className="flex-1"></div>
 
