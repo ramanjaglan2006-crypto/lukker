@@ -87,8 +87,10 @@ export default function App() {
     <div className="h-screen w-screen overflow-hidden bg-[#0D1321] text-white flex flex-col md:flex-row">
       
       {/* LEFT COLUMN: LUDO (approx 60-65% width) */}
-      <div className="flex-[6] h-full flex flex-col items-center justify-center p-2 relative">
-        <div className="absolute top-4 left-4 z-50">
+      <div className="flex-[6] h-full flex flex-col items-center p-2 relative">
+        
+        {/* Header - Flow normally at the top */}
+        <div className="w-full flex justify-start pl-2 pt-2 mb-2">
           <Header
             playerMode={playerMode}
             setPlayerMode={setPlayerMode}
@@ -98,16 +100,17 @@ export default function App() {
           />
         </div>
 
-        {/* Ludo Container with constraints to maintain square aspect ratio */}
-        <div className="flex flex-col gap-4 w-full h-full max-h-[85vh] max-w-[85vh] justify-center">
-          {/* Top Players */}
-          <div className="w-full flex justify-between gap-4 px-4">
+        {/* Ludo Container with constraints to maintain square aspect ratio without overlap */}
+        <div className="flex flex-col w-full h-full justify-center items-center flex-1 min-h-0 pb-4">
+          
+          {/* Top Players - Pushed to the edges */}
+          <div className="w-full max-w-[85vh] flex justify-between px-2 mb-3">
             {renderPlayer('red')}
             {renderPlayer('green')}
           </div>
 
           {/* CENTRAL LUDO BOARD - Auto-scales but stays square */}
-          <div className="flex justify-center w-full flex-1 min-h-0">
+          <div className="flex justify-center flex-1 min-h-0 w-full">
             <div className="aspect-square h-full w-auto">
               <LudoBoard
                 tokens={tokens}
@@ -118,8 +121,8 @@ export default function App() {
             </div>
           </div>
 
-          {/* Bottom Players */}
-          <div className="w-full flex justify-between gap-4 px-4">
+          {/* Bottom Players - Pushed to the edges */}
+          <div className="w-full max-w-[85vh] flex justify-between px-2 mt-3">
             {renderPlayer('blue')}
             {renderPlayer('yellow')}
           </div>

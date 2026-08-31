@@ -49,168 +49,208 @@ export default function PokerPanel({
     return (card.suit === '♥' || card.suit === '♦') ? 'text-red-600' : 'text-slate-900';
   };
 
-  const renderPlayerStatus = (pId, isLocal) => {
+  const renderOpponent = (pId, index, total) => {
     const pConfig = PLAYER_CONFIGS[pId];
     const pState = pokerPlayers[pId];
     if (!pState) return null;
 
     const isActor = currentPokerActor === pId;
-    const reveal = isLocal || phase === Phase.POKER_SHOWDOWN;
+    
+    // Position opponents along the top arc based on index
+    // 1 opponent: Center Top
+    // 2 opponents: Top Left, Top Right
+    // 3 opponents: Top Left, Top Center, Top Right
+    let positionClass = "";
+    if (total === 1) {
+      positionClass = "absolute top-4 left-1/2 -translate-x-1/2";
+    } else if (total === 2) {
+      positionClass = index === 0 ? "absolute top-8 left-8" : "absolute top-8 right-8";
+    } else if (total === 3) {
+      if (index === 0) positionClass = "absolute top-12 left-6";
+      if (index === 1) positionClass = "absolute top-4 left-1/2 -translate-x-1/2";
+      if (index === 2) positionClass = "absolute top-12 right-6";
+    }
 
     return (
-      <div key={pId} className={`flex items-center justify-between p-2 rounded-xl bg-[#0D1321] border ${isActor ? 'border-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.3)]' : 'border-slate-800'} ${pState.hasFolded ? 'opacity-40 grayscale' : ''}`}>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: pConfig.color }} />
-          <div className="flex flex-col">
-            <span className="text-xs font-bold text-white">{pConfig.name.split(' ')[0]}</span>
-            <span className="text-[10px] text-slate-400">Bank: ${pState.bankroll}</span>
-          </div>
+      <div key={pId} className={`flex flex-col items-center z-20 ${positionClass} ${pState.hasFolded ? 'opacity-40 grayscale' : ''}`}>
+        
+        {/* Avatar Circle */}
+        <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full border-4 ${isActor ? 'border-yellow-400 shadow-[0_0_20px_#FDD835]' : 'border-slate-800'} flex items-center justify-center overflow-hidden bg-slate-900 relative`}>
+            <div className="w-full h-full flex items-center justify-center font-bold text-white text-lg" style={{backgroundColor: pConfig.color}}>
+                {pConfig.name.charAt(0)}
+            </div>
+            {/* Gloss */}
+            <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/30" />
         </div>
         
-        <div className="flex items-center gap-3">
-          <div className="flex flex-col items-end mr-2">
-            <span className="text-[10px] text-slate-400">Bet</span>
-            <span className="text-xs font-bold text-emerald-400">${pState.currentBet}</span>
-          </div>
-          
-          <div className="flex gap-1">
-            {pState.holeCards.map((card, idx) => (
-              <div
-                key={idx}
-                className={`w-6 h-9 rounded flex items-center justify-center text-xs font-black bg-white shadow ${
-                  reveal ? getCardColor(card) : 'text-slate-400 bg-slate-200'
-                }`}
-              >
-                {reveal ? formatCard(card) : '🂠'}
-              </div>
-            ))}
-          </div>
+        {/* Name & Bankroll */}
+        <div className="flex flex-col items-center -mt-2 z-30">
+          <span className="text-white font-bold text-[10px] sm:text-xs bg-black/80 px-3 py-0.5 rounded-full shadow border border-slate-700 whitespace-nowrap">
+            {pConfig.name.split(' ')[0]}
+          </span>
+          <span className="text-yellow-400 font-black text-[10px] sm:text-xs drop-shadow-md">
+            ${pState.bankroll}
+          </span>
         </div>
+
+        {/* Tiny Face-down cards overlapping avatar */}
+        <div className="flex -space-x-3 -mt-6 sm:-mt-8 z-10 pointer-events-none drop-shadow-xl">
+          {pState.holeCards.map((card, idx) => (
+              <div key={idx} className={`w-7 h-10 sm:w-9 sm:h-12 rounded border border-white/20 bg-blue-900 shadow flex items-center justify-center transform ${idx === 0 ? '-rotate-12' : 'rotate-12'}`}>
+                {/* Decorative back pattern */}
+                <div className="w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-700 to-blue-900 opacity-50"></div>
+              </div>
+          ))}
+        </div>
+
+        {/* Current Bet Chip placed slightly forward on the table */}
+        {pState.currentBet > 0 && (
+          <div className="absolute -bottom-10 sm:-bottom-12 w-8 h-8 rounded-full border-4 border-dashed border-red-500 bg-white flex items-center justify-center shadow-lg transform scale-90">
+             <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center">
+                <span className="text-white font-black text-[9px] drop-shadow">${pState.currentBet}</span>
+             </div>
+          </div>
+        )}
       </div>
     );
   };
 
   return (
-    <div className="w-full h-full flex flex-col gap-4 overflow-y-auto overflow-x-hidden p-2 custom-scrollbar">
+    <div className="w-full h-full flex flex-col p-2 bg-[#0D1321] overflow-hidden">
       
-      {/* 1. OPPONENT STATUSES (Top) */}
-      <div className="flex flex-col gap-2 mt-2">
-        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest pl-1">Table</span>
-        {opponents.map(pId => renderPlayerStatus(pId, false))}
+      {/* 1. THE OVAL POKER TABLE (Top & Middle) */}
+      <div className="flex-1 w-full relative bg-gradient-to-b from-[#0f4f22] to-[#0a3817] rounded-[100px] sm:rounded-[140px] border-[12px] sm:border-[20px] border-[#131C31] shadow-[inset_0_0_80px_rgba(0,0,0,0.9),0_20px_40px_rgba(0,0,0,0.6)] flex flex-col items-center justify-center mt-2 overflow-visible">
+        
+        {/* Felt Inner Line */}
+        <div className="absolute inset-4 sm:inset-6 rounded-[90px] sm:rounded-[120px] border-2 border-emerald-700/30 pointer-events-none" />
+
+        {/* Table Pot Information (Center Top) */}
+        <div className="absolute top-1/4 sm:top-[28%] left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center bg-black/40 px-6 py-2 rounded-full border border-emerald-900/50 shadow-inner z-10">
+           <span className="text-[10px] text-emerald-400 font-bold tracking-widest uppercase">Total Pot</span>
+           <span className="text-2xl font-black text-yellow-400 drop-shadow-[0_0_10px_#FDD835]">${pot}</span>
+        </div>
+
+        {/* OPPONENTS */}
+        {opponents.map((pId, idx) => renderOpponent(pId, idx, opponents.length))}
+
+        {/* COMMUNITY CARDS DEAD CENTER */}
+        <div className="z-20 transform scale-90 sm:scale-100">
+           <CommunityCards 
+            phase={phase} 
+            communityCards={communityCards} 
+            pot={0} // Hide pot in CommunityCards since we render it above
+          />
+        </div>
+
+        {/* LOCAL PLAYER CARDS & BET (Bottom Edge) */}
+        {localPlayerState && (
+          <div className="absolute -bottom-8 sm:-bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center z-30">
+            
+            {/* Player's current Bet chip pushed onto table */}
+            {localPlayerState.currentBet > 0 && (
+              <div className="mb-2 w-10 h-10 rounded-full border-4 border-dashed border-blue-500 bg-white flex items-center justify-center shadow-2xl transform">
+                <div className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center">
+                    <span className="text-white font-black text-[11px] drop-shadow">${localPlayerState.currentBet}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Face Up Cards */}
+            <div className="flex gap-2 group mb-1">
+              {localPlayerState.holeCards.map((card, idx) => (
+                <div
+                  key={idx}
+                  className={`w-14 h-20 sm:w-20 sm:h-28 rounded-lg flex items-center justify-center text-xl sm:text-3xl font-black bg-white shadow-[0_10px_25px_rgba(0,0,0,0.8)] border border-slate-200 transform transition-transform duration-300 ${idx === 0 ? '-rotate-6 translate-y-2' : 'rotate-6 translate-y-2'} group-hover:translate-y-0 group-hover:scale-110 ${getCardColor(card)}`}
+                >
+                  {formatCard(card)}
+                </div>
+              ))}
+            </div>
+
+            {/* Local Player Info Pill */}
+            <div className="flex items-center gap-3 bg-[#131C31] border-2 border-slate-700 px-5 py-1.5 rounded-full shadow-xl">
+               <span className="text-sm font-bold text-white tracking-wide">{localPlayerConfig.name} (You)</span>
+               <div className="h-4 w-[1px] bg-slate-600" />
+               <span className="text-sm font-black text-yellow-400">${localPlayerState.bankroll}</span>
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="flex-1"></div>
-
-      {/* 2. COMMUNITY CARDS (Middle) */}
-      <CommunityCards 
-        phase={phase} 
-        communityCards={communityCards} 
-        pot={pot} 
-      />
-
-      <div className="flex-1"></div>
-
-      {/* 3. LOCAL PLAYER HOLE CARDS & INFO (Bottom-Middle) */}
-      {localPlayerState && (
-        <div className="flex flex-col items-center gap-2 mt-4 p-3 bg-[#0D1321] rounded-2xl border border-slate-700">
-          <span className="text-xs text-slate-400 font-bold uppercase tracking-widest">Your Hand</span>
-          <div className="flex gap-2 group">
-            {localPlayerState.holeCards.map((card, idx) => (
-              <div
-                key={idx}
-                className={`w-12 h-16 sm:w-16 sm:h-24 rounded-lg flex items-center justify-center text-lg sm:text-2xl font-black bg-white shadow-xl transition-transform duration-300 transform group-hover:-translate-y-2 ${getCardColor(card)}`}
-              >
-                {formatCard(card)}
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between w-full mt-2 px-2">
-            <div className="flex flex-col items-center">
-              <span className="text-[10px] text-slate-500 uppercase">Bankroll</span>
-              <span className="text-sm font-bold text-yellow-400">${localPlayerState.bankroll}</span>
+      {/* 2. ACTION CONTROLS (Bottom Panel) */}
+      <div className="w-full shrink-0 mt-12 sm:mt-16 z-40">
+        {actorState && !actorState.hasFolded && !actorState.isAllIn && phase !== Phase.POKER_SHOWDOWN ? (
+          <div className="w-full bg-[#131C31] border-t-2 border-[#1E293B] rounded-2xl p-4 flex flex-col items-center gap-3 shadow-2xl relative">
+            
+            <div className="absolute -top-4 bg-[#0D1321] px-4 py-1 border border-slate-700 rounded-full shadow-lg">
+              <span className="text-xs font-black uppercase tracking-widest animate-pulse" style={{ color: actorConfig.color }}>
+                {isLocalPlayerTurn ? 'YOUR TURN TO ACT' : `WAITING FOR ${actorConfig.name}...`}
+              </span>
             </div>
-            <div className="flex flex-col items-center">
-              <span className="text-[10px] text-slate-500 uppercase">Current Bet</span>
-              <span className="text-sm font-bold text-emerald-400">${localPlayerState.currentBet}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 4. ACTION CONTROLS (Bottom) */}
-      {actorState && !actorState.hasFolded && !actorState.isAllIn && phase !== Phase.POKER_SHOWDOWN && (
-        <div className="w-full bg-[#131C31] border border-slate-700 rounded-2xl p-4 flex flex-col items-center gap-3 shadow-2xl relative">
-          
-          <div className="absolute -top-3 bg-[#131C31] px-3 border border-slate-700 rounded-full">
-            <span className="text-[10px] font-bold uppercase tracking-widest animate-pulse" style={{ color: actorConfig.color }}>
-              {isLocalPlayerTurn ? 'YOUR TURN' : `${actorConfig.name}'s TURN`}
-            </span>
-          </div>
-          
-          {isLocalPlayerTurn ? (
-            <div className="flex flex-wrap justify-center gap-2 w-full pt-1">
-              <button
-                onClick={() => submitPokerAction('FOLD')}
-                className="flex-1 min-w-[30%] py-2 rounded-lg text-xs font-bold bg-red-900/50 border border-red-500/40 text-red-300 hover:bg-red-800 transition-all shadow-md"
-              >
-                FOLD
-              </button>
-              
-              {canCheck ? (
+            
+            {isLocalPlayerTurn && (
+              <div className="flex flex-wrap justify-center gap-2 w-full pt-2">
                 <button
-                  onClick={() => submitPokerAction('CHECK')}
-                  className="flex-1 min-w-[30%] py-2 rounded-lg text-xs font-bold bg-slate-700 border border-slate-500 text-slate-300 hover:bg-slate-600 transition-all shadow-md"
+                  onClick={() => submitPokerAction('FOLD')}
+                  className="flex-1 min-w-[20%] py-3 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wide bg-gradient-to-b from-slate-700 to-slate-900 border border-slate-600 text-slate-300 hover:text-white transition-all shadow-lg active:scale-95"
                 >
-                  CHECK
+                  Fold
                 </button>
-              ) : (
+                
+                {canCheck ? (
+                  <button
+                    onClick={() => submitPokerAction('CHECK')}
+                    className="flex-1 min-w-[20%] py-3 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wide bg-gradient-to-b from-blue-600 to-blue-800 border border-blue-500 text-white hover:brightness-110 transition-all shadow-lg active:scale-95"
+                  >
+                    Check
+                  </button>
+                ) : (
+                  <button
+                    disabled={actorState.bankroll < toCall}
+                    onClick={() => submitPokerAction('CALL')}
+                    className={`flex-1 min-w-[20%] py-3 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wide transition-all shadow-lg active:scale-95 ${
+                      actorState.bankroll >= toCall 
+                        ? 'bg-gradient-to-b from-emerald-500 to-emerald-700 border border-emerald-400 text-white hover:brightness-110'
+                        : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50'
+                    }`}
+                  >
+                    Call ${toCall}
+                  </button>
+                )}
+
                 <button
-                  disabled={actorState.bankroll < toCall}
-                  onClick={() => submitPokerAction('CALL')}
-                  className={`flex-1 min-w-[30%] py-2 rounded-lg text-xs font-bold transition-all shadow-md ${
-                    actorState.bankroll >= toCall 
-                      ? 'bg-blue-600 border border-blue-400 text-white hover:bg-blue-500'
-                      : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                  disabled={actorState.bankroll <= toCall}
+                  onClick={() => {
+                    const raiseAmount = canCheck ? 1 : toCall + 1;
+                    submitPokerAction(canCheck ? 'BET' : 'RAISE', raiseAmount);
+                  }}
+                  className={`flex-1 min-w-[30%] py-3 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wide transition-all shadow-lg active:scale-95 ${
+                    actorState.bankroll > toCall
+                      ? 'bg-gradient-to-b from-purple-600 to-purple-800 border border-purple-500 text-white hover:brightness-110'
+                      : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50'
                   }`}
                 >
-                  CALL {toCall}
+                  {canCheck ? 'Bet $1' : `Raise to $${toCall + 1}`}
                 </button>
-              )}
 
-              <button
-                disabled={actorState.bankroll <= toCall}
-                onClick={() => {
-                  const raiseAmount = canCheck ? 1 : toCall + 1;
-                  submitPokerAction(canCheck ? 'BET' : 'RAISE', raiseAmount);
-                }}
-                className={`flex-1 min-w-[45%] py-2 rounded-lg text-xs font-bold transition-all shadow-md ${
-                  actorState.bankroll > toCall
-                    ? 'bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500'
-                    : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                }`}
-              >
-                {canCheck ? 'BET 1' : `RAISE TO ${toCall + 1}`}
-              </button>
-
-              <button
-                disabled={actorState.bankroll === 0}
-                onClick={() => submitPokerAction('ALL_IN')}
-                className={`flex-1 min-w-[45%] py-2 rounded-lg text-xs font-bold transition-all shadow-md ${
-                  actorState.bankroll > 0
-                    ? 'bg-yellow-500 border border-yellow-400 text-black hover:bg-yellow-400'
-                    : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                }`}
-              >
-                ALL-IN ({actorState.bankroll})
-              </button>
-            </div>
-          ) : (
-            <div className="py-4 w-full flex items-center justify-center">
-              <span className="text-xs text-slate-400 animate-pulse font-medium">Waiting for {actorConfig.name}...</span>
-            </div>
-          )}
-        </div>
-      )}
+                <button
+                  disabled={actorState.bankroll === 0}
+                  onClick={() => submitPokerAction('ALL_IN')}
+                  className={`flex-1 min-w-[15%] py-3 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wide transition-all shadow-lg active:scale-95 ${
+                    actorState.bankroll > 0
+                      ? 'bg-gradient-to-b from-amber-500 to-orange-600 border border-amber-400 text-white hover:brightness-110'
+                      : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50'
+                  }`}
+                >
+                  All-In
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+           <div className="h-16" /> // spacer when no action active
+        )}
+      </div>
     </div>
   );
 }
